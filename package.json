@@ -3,13 +3,11 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
+    "preinstall": "npm ci",
     "postinstall": "npm run build"
-  },
-  "engines": {
-    "node": ">=18.0.0"
   },
   "author": "",
   "license": "ISC",
