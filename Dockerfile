@@ -1,4 +1,4 @@
-FROM node:18-slim
+FROM node:22-slim
 
 # Install required packages for Puppeteer
 RUN apt-get update \
