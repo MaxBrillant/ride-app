@@ -10,6 +10,8 @@ import { v4 as uuidv4 } from "uuid";
 import { config } from "./config";
 import { RideShareDatabase } from "./supabaseService";
 
+import express from "express";
+
 // Interfaces and Types
 interface RideDetails {
   pickup: string;
@@ -41,11 +43,16 @@ const db = new RideShareDatabase();
 
 class RideSharingBot {
   private client: Client;
+  private app: express.Application;
+  private server: any;
   private rideRequests: Map<string, Map<string, RideRequest>>; // Map<UserNumber, Map<RequestID, Request>>;
   private readonly DRIVERS_GROUP_ID: string = "120363385914840853@g.us";
   private readonly REQUEST_TIMEOUT = 5 * 60 * 1000; // 20 minutes
 
   constructor() {
+    // Initialize Express
+    this.app = express();
+
     this.client = new Client({
       authStrategy: new LocalAuth({
         dataPath: config.sessionPath,
@@ -64,10 +71,18 @@ class RideSharingBot {
       },
     });
 
+    // Setup Express routes
+    this.setupExpress();
+
     this.rideRequests = new Map();
 
-    this.initializeClient();
     this.startCleanupInterval();
+  }
+
+  private setupExpress() {
+    this.app.get("/", (req, res) => {
+      res.send("WhatsApp Bot is running!");
+    });
   }
 
   private startCleanupInterval(): void {
@@ -99,40 +114,68 @@ class RideSharingBot {
     });
   }
 
-  private initializeClient(): void {
-    // Handle QR code generation
-    this.client.on("qr", (qr) => {
-      console.log("QR RECEIVED", qr);
-      qrcode.generate(qr, { small: true });
-    });
+  public async start(): Promise<void> {
+    try {
+      // Start Express server
+      const port = process.env.PORT || 3000;
+      this.server = this.app.listen(Number(port), "0.0.0.0", () => {
+        console.log(`Server is running on port ${port}`);
+      });
+      // Handle QR code generation
+      this.client.on("qr", (qr) => {
+        console.log("QR RECEIVED", qr);
+        qrcode.generate(qr, { small: true });
+      });
 
-    // Handle ready state
-    this.client.on("ready", () => {
-      console.log("Client is ready!");
-    });
+      // Handle ready state
+      this.client.on("ready", () => {
+        console.log("Client is ready!");
+      });
 
-    // Handle authentication failure
-    this.client.on("auth_failure", (msg) => {
-      console.error("Authentication failed:", msg);
-    });
+      // Handle authentication failure
+      this.client.on("auth_failure", (msg) => {
+        console.error("Authentication failed:", msg);
+        this.stop();
+      });
 
-    // Handle disconnection
-    this.client.on("disconnected", (reason) => {
-      console.log("Client was disconnected:", reason);
-    });
+      // Handle disconnection
+      this.client.on("disconnected", (reason) => {
+        console.log("Client was disconnected:", reason);
+        this.stop();
+      });
 
-    this.client.on("message", async (msg: Message) => {
-      const chat: Chat = await msg.getChat();
+      this.client.on("message", async (msg: Message) => {
+        const chat: Chat = await msg.getChat();
 
-      if (chat.id._serialized === this.DRIVERS_GROUP_ID) {
-        await this.handleDriverResponse(msg);
-        return;
+        if (chat.id._serialized === this.DRIVERS_GROUP_ID) {
+          await this.handleDriverResponse(msg);
+          return;
+        }
+
+        if (!chat.isGroup) {
+          await this.handleUserMessage(msg);
+        }
+      });
+      await this.client.initialize();
+    } catch (error) {
+      console.error("Failed to start the bot:", error);
+      process.exit(1);
+    }
+  }
+
+  async stop() {
+    try {
+      // Cleanup WhatsApp client
+      if (this.client) {
+        await this.client.destroy();
       }
-
-      if (!chat.isGroup) {
-        await this.handleUserMessage(msg);
+      // Stop Express server
+      if (this.server) {
+        this.server.close();
       }
-    });
+    } catch (error) {
+      console.error("Error stopping services:", error);
+    }
   }
 
   private generateRideId(): string {
@@ -404,17 +447,19 @@ Murakoze guhitamwo urubuga Tujane.`,
 
 Andika code ya runo rugendo, ariyo *${details.rideId}* mu minota itarenze 20 (mirongo ibiri) kugira mushobore kwemeza ko mugiye gutwara uno muntu.`;
   }
-
-  public async start(): Promise<void> {
-    try {
-      await this.client.initialize();
-    } catch (error) {
-      console.error("Failed to start the bot:", error);
-      process.exit(1);
-    }
-  }
 }
 
 // Create and start the bot
 const bot = new RideSharingBot();
-bot.start();
+bot.start().catch(console.error);
+
+// Handle process termination
+process.on("SIGTERM", () => {
+  console.log("SIGTERM received. Cleaning up...");
+  bot.stop();
+});
+
+process.on("SIGINT", () => {
+  console.log("SIGINT received. Cleaning up...");
+  bot.stop();
+});

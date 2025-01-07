@@ -29,8 +29,11 @@ RUN npx tsc -p tsconfig.json
 # Create directory for WhatsApp session data
 RUN mkdir -p /tmp/.wwebjs_auth
 
-# Expose port
-EXPOSE 10000
+# Expose port (this is just documentation, not functional)
+EXPOSE 3000
+
+# Environment variable for the port
+ENV PORT=3000
 
 # Start the bot
 CMD [ "npm", "start" ]
