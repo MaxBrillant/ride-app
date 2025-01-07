@@ -27,7 +27,7 @@ COPY src ./src
 RUN npx tsc -p tsconfig.json
 
 # Create directory for WhatsApp session data
-RUN mkdir -p /tmp/.wwebjs_auth
+VOLUME ["/tmp/.wwebjs_auth"]
 
 # Expose port (this is just documentation, not functional)
 EXPOSE 3000
