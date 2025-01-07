@@ -1,4 +1,4 @@
-FROM node:22-slim
+FROM node:18-slim
 
 # Install required packages for Puppeteer
 RUN apt-get update \
@@ -17,13 +17,14 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm ci
 
-# Copy source code
-COPY . .
+# Copy source code and config files
+COPY tsconfig.json ./
+COPY src ./src
 
 # Build TypeScript
-RUN npm run build
+RUN npx tsc -p tsconfig.json
 
 # Create directory for WhatsApp session data
 RUN mkdir -p /tmp/.wwebjs_auth
