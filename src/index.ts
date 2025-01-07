@@ -357,7 +357,7 @@ Andika "*Ego*" kugira mwemeze runo rugendo, canke mwandike "*Oya*" kugira muruhe
 
   private async handleDriverResponse(msg: Message): Promise<void> {
     const messageContent: string = msg.body;
-    if (!messageContent.startsWith("TUJ")) {
+    if (!messageContent.toUpperCase().startsWith("TUJ")) {
       return;
     }
 
