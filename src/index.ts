@@ -287,7 +287,7 @@ Araza kubahamagara hanyuma muze kwumvikana ku vyerekeye amahera, hamwe naho yoba
 
 Nimutaba muraronka uwubandikira n'umwe mu minota 20 (mirongo ibiri), n'uko ata mu dereva azoba yemeye kubatwara ku mvo z'uko atari hafi canke atabishoboye. Muce mugerageza bushasha.
 
-Mukaba mwipfuza namwe gutwara abandi kandi mukinjiza amafaranga, nimwiyandikishe muciye hano https://forms.google.com`
+Mukaba mwipfuza namwe gutwara abandi kandi mukinjiza amafaranga, nimwiyandikishe muciye hano https://docs.google.com/forms/d/e/1FAIpQLSe0ZKs-liokdIVZc11wF9y6L-BjOqdrnYru4-QxcBgHHHW7hA/viewform?usp=header`
             );
           } catch (e) {
             await msg.reply(
