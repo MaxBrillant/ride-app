@@ -5,12 +5,13 @@ import {
   Message,
   Chat,
   MessageMedia,
+  RemoteAuth,
 } from "whatsapp-web.js";
 import { v4 as uuidv4 } from "uuid";
-import { config } from "./config";
 import { RideShareDatabase } from "./supabaseService";
 
 import express from "express";
+import { SupabaseStore } from "./supabaseSessionStore";
 
 // Interfaces and Types
 interface RideDetails {
@@ -53,9 +54,12 @@ class RideSharingBot {
     // Initialize Express
     this.app = express();
 
+    const store = new SupabaseStore();
     this.client = new Client({
-      authStrategy: new LocalAuth({
-        dataPath: config.sessionPath,
+      authStrategy: new RemoteAuth({
+        store: store,
+        backupSyncIntervalMs: 300000,
+        clientId: crypto.randomUUID(),
       }),
       puppeteer: {
         headless: true,
@@ -142,6 +146,9 @@ class RideSharingBot {
       this.client.on("disconnected", (reason) => {
         console.log("Client was disconnected:", reason);
         this.stop();
+      });
+      this.client.on("remote_session_saved", () => {
+        console.log("Session has been saved to remote DB");
       });
 
       this.client.on("message", async (msg: Message) => {
@@ -330,7 +337,7 @@ Araza kubahamagara hanyuma muze kwumvikana ku vyerekeye amahera, hamwe naho yoba
 
 Nimutaba muraronka uwubandikira n'umwe mu minota 20 (mirongo ibiri), n'uko ata mu dereva azoba yemeye kubatwara ku mvo z'uko atari hafi canke atabishoboye. Muce mugerageza bushasha.
 
-Mukaba mwipfuza namwe gutwara abandi kandi mukinjiza amafaranga, nimwiyandikishe muciye hano https://docs.google.com/forms/d/e/1FAIpQLSe0ZKs-liokdIVZc11wF9y6L-BjOqdrnYru4-QxcBgHHHW7hA/viewform?usp=header`
+Mukaba mwipfuza namwe gutwara abandi kandi mukinjiza amafaranga, nimwiyandikishe muciye hano https://forms.gle/1BUdz4kW32BbXc4v6`
             );
           } catch (e) {
             await msg.reply(
