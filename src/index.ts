@@ -59,7 +59,7 @@ class RideSharingBot {
       authStrategy: new RemoteAuth({
         store: store,
         backupSyncIntervalMs: 300000,
-        clientId: crypto.randomUUID(),
+        clientId: uuidv4(),
       }),
       puppeteer: {
         headless: true,
