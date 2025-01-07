@@ -30,7 +30,7 @@ RUN npx tsc -p tsconfig.json
 RUN mkdir -p /tmp/.wwebjs_auth
 
 # Expose port
-EXPOSE 3000
+EXPOSE 10000
 
 # Start the bot
 CMD [ "npm", "start" ]
