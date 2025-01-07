@@ -370,7 +370,7 @@ Araza kubahamagara mukanya, ariko namwe murashobora kumuhamagara kuri +${
           driverNumber.split("@")[0]
         }.
 
-Murakoze guhitamwo urubuga Tugende.`,
+Murakoze guhitamwo urubuga Tujane.`,
       });
 
       await this.client.sendMessage(
