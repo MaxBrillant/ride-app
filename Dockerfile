@@ -10,8 +10,8 @@ RUN apt-get update \
     --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
-# Create app directory
-WORKDIR /usr/src/app
+# # Create app directory
+# WORKDIR /usr/src/app
 
 # Copy package files
 COPY package*.json ./

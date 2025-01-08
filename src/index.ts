@@ -367,7 +367,7 @@ Andika "*Ego*" kugira mwemeze runo rugendo, canke mwandike "*Oya*" kugira muruhe
       return;
     }
 
-    const publicRideId: string = messageContent;
+    const publicRideId: string = messageContent.toUpperCase();
     const driverNumber: string = msg.author || "";
 
     try {
