@@ -13,8 +13,4 @@ export const config = {
 
   node_env: process.env.NODE_ENV || "development",
   // Store WhatsApp session in different locations based on environment
-  sessionPath:
-    process.env.NODE_ENV === "production"
-      ? "/tmp/.wwebjs_auth"
-      : path.resolve(__dirname, "../.wwebjs_auth"),
 };

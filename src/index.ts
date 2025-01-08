@@ -1,7 +1,6 @@
 import qrcode from "qrcode-terminal";
 import {
   Client,
-  LocalAuth,
   Message,
   Chat,
   MessageMedia,
@@ -59,7 +58,7 @@ class RideSharingBot {
       authStrategy: new RemoteAuth({
         store: store,
         backupSyncIntervalMs: 300000,
-        clientId: uuidv4(),
+        clientId: "ride-app-auth",
       }),
       puppeteer: {
         headless: true,

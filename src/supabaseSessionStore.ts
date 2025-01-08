@@ -1,112 +1,112 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { Store } from "whatsapp-web.js";
-import { config } from "./config";
+import fs from "fs";
+import { Readable } from "stream";
 
-interface SessionData {
-  id: string;
-  session_data: string;
-  created_at?: string;
-  updated_at?: string;
+interface StoreOptions {
+  session: string;
+  path?: string;
 }
 
-export class SupabaseStore implements Store {
-  private supabase: SupabaseClient;
-  private tableName: string;
-  private sessionData: Map<string, string>;
+export class SupabaseStore {
+  private supabase: SupabaseClient = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_API_KEY!
+  );
+  private bucketName: string = "whatsapp-sessions";
 
-  constructor(
-    supabaseUrl: string = config.supabase.url as string,
-    supabaseKey: string = config.supabase.apiKey as string,
-    tableName: string = "whatsapp_sessions"
-  ) {
-    this.supabase = createClient(supabaseUrl, supabaseKey);
-    this.tableName = tableName;
-    this.sessionData = new Map();
-  }
+  constructor() {}
 
-  async sessionExists(options: { session: string }): Promise<boolean> {
-    const { data, error } = await this.supabase
-      .from(this.tableName)
-      .select("id")
-      .eq("id", options.session)
-      .single();
-
-    if (error) {
-      console.error("Error checking session existence:", error);
-      return false;
-    }
-
-    return !!data;
-  }
-
-  async save(options: { session: string }): Promise<void> {
-    // Store session data in memory
-    this.sessionData.set(options.session, options.session);
-
-    const exists = await this.sessionExists({ session: options.session });
-
-    if (exists) {
-      const { error } = await this.supabase
-        .from(this.tableName)
-        .update({
-          session_data: options.session,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", options.session);
-
-      if (error) throw new Error(`Failed to update session: ${error.message}`);
-    } else {
-      const { error } = await this.supabase.from(this.tableName).insert({
-        id: options.session,
-        session_data: options.session,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+  async sessionExists(options: StoreOptions): Promise<boolean> {
+    const { data, error } = await this.supabase.storage
+      .from(this.bucketName)
+      .list("", {
+        search: `${options.session}.zip`,
       });
 
-      if (error) throw new Error(`Failed to save session: ${error.message}`);
+    if (error) {
+      throw error;
     }
+
+    return data.length > 0;
   }
 
-  async extract(options: {
-    session: string;
-    path?: string;
-  }): Promise<string | null> {
-    // First try to get from memory
-    const cachedSession = this.sessionData.get(options.session);
-    if (cachedSession) {
-      return cachedSession;
+  async save(options: StoreOptions): Promise<void> {
+    const fileBuffer = fs.readFileSync(`${options.session}.zip`);
+
+    // Upload the new session file
+    const { error: uploadError } = await this.supabase.storage
+      .from(this.bucketName)
+      .upload(`${options.session}.zip`, fileBuffer, {
+        upsert: true,
+      });
+
+    if (uploadError) {
+      throw uploadError;
     }
 
-    // If not in memory, get from database
-    const { data, error } = await this.supabase
-      .from(this.tableName)
-      .select("session_data")
-      .eq("id", options.session)
-      .single();
+    await this.deletePrevious(options);
+  }
+
+  async extract(options: StoreOptions): Promise<void> {
+    const { data, error } = await this.supabase.storage
+      .from(this.bucketName)
+      .download(`${options.session}.zip`);
 
     if (error) {
-      console.error("Error extracting session:", error);
-      return null;
+      throw error;
     }
 
-    if (data?.session_data) {
-      // Store in memory for future use
-      this.sessionData.set(options.session, data.session_data);
-      return data.session_data;
+    if (!data) {
+      throw new Error("No data received from storage");
     }
 
-    return null;
+    return new Promise(async (resolve, reject) => {
+      const arrayBuffer = await data.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      fs.writeFile(options.path || `${options.session}.zip`, buffer, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
   }
 
-  async delete(options: { session: string }): Promise<void> {
-    // Remove from memory
-    this.sessionData.delete(options.session);
+  async delete(options: StoreOptions): Promise<void> {
+    const { error } = await this.supabase.storage
+      .from(this.bucketName)
+      .remove([`${options.session}.zip`]);
 
-    const { error } = await this.supabase
-      .from(this.tableName)
-      .delete()
-      .eq("id", options.session);
+    if (error) {
+      throw error;
+    }
+  }
 
-    if (error) throw new Error(`Failed to delete session: ${error.message}`);
+  private async deletePrevious(options: StoreOptions): Promise<void> {
+    const { data, error } = await this.supabase.storage
+      .from(this.bucketName)
+      .list("", {
+        search: `${options.session}.zip`,
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    // If there are multiple files with the same name pattern
+    if (data.length > 1) {
+      // Sort by created_at and get the oldest file
+      const oldestFile = data.sort(
+        (a, b) =>
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      )[0];
+
+      // Delete the oldest file
+      const { error: deleteError } = await this.supabase.storage
+        .from(this.bucketName)
+        .remove([oldestFile.name]);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+    }
   }
 }
