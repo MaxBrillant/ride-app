@@ -11,6 +11,7 @@ import { RideShareDatabase } from "./supabaseService";
 
 import express from "express";
 import { SupabaseStore } from "./supabaseSessionStore";
+import axios from "axios";
 
 // Interfaces and Types
 interface RideDetails {
@@ -48,6 +49,7 @@ class RideSharingBot {
   private rideRequests: Map<string, Map<string, RideRequest>>; // Map<UserNumber, Map<RequestID, Request>>;
   private readonly DRIVERS_GROUP_ID: string = "120363385914840853@g.us";
   private readonly REQUEST_TIMEOUT = 5 * 60 * 1000; // 20 minutes
+  private readonly PORT = process.env.PORT || 3000;
 
   constructor() {
     // Initialize Express
@@ -80,12 +82,27 @@ class RideSharingBot {
     this.rideRequests = new Map();
 
     this.startCleanupInterval();
+
+    this.keepAlive();
   }
 
   private setupExpress() {
     this.app.get("/", (req, res) => {
       res.send("WhatsApp Bot is running!");
     });
+  }
+
+  private keepAlive() {
+    setInterval(async () => {
+      try {
+        const serverUrl =
+          process.env.RENDER_EXTERNAL_URL || `http://localhost:${this.PORT}`;
+        await axios.get(serverUrl + "/");
+        console.log("Server kept alive");
+      } catch (err) {
+        console.error("Error keeping server alive:", err);
+      }
+    }, 420000); // 7 minutes
   }
 
   private startCleanupInterval(): void {
@@ -120,9 +137,8 @@ class RideSharingBot {
   public async start(): Promise<void> {
     try {
       // Start Express server
-      const port = process.env.PORT || 3000;
-      this.server = this.app.listen(Number(port), "0.0.0.0", () => {
-        console.log(`Server is running on port ${port}`);
+      this.server = this.app.listen(Number(this.PORT), "0.0.0.0", () => {
+        console.log(`Server is running on port ${this.PORT}`);
       });
       // Handle QR code generation
       this.client.on("qr", (qr) => {
