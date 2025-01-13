@@ -229,8 +229,9 @@ class RideSharingBot {
 
       if (!this.rideRequests.has(userNumber)) {
         this.rideRequests.set(userNumber, new Map());
+      } else {
+        this.rideRequests.get(userNumber)!.set(requestId, newRequest);
       }
-      this.rideRequests.get(userNumber)!.set(requestId, newRequest);
 
       await msg.reply(
         `*Karibu ku rubuga Tujane*
@@ -259,14 +260,15 @@ Akarorero: Ku Mutanga kuri kaminuza y'Uburundi.`
             await msg.reply(`*Muri hehe ubu?*
 
 Akarorero: Ku Mutanga kuri kaminuza y'Uburundi.`);
-            return;
-          }
-          request.details.pickup = msg.body;
-          request.state = UserState.AWAITING_DESTINATION;
-          await msg.reply(`*Mwipfuza kuja hehe?*
+            break;
+          } else {
+            request.details.pickup = msg.body;
+            request.state = UserState.AWAITING_DESTINATION;
+            await msg.reply(`*Mwipfuza kuja hehe?*
 
 Akarorero: Muri Centre Ville kuri Bata.`);
-          break;
+            break;
+          }
 
         case UserState.AWAITING_DESTINATION:
           const destinationLocation = msg.body.trim();
@@ -276,14 +278,15 @@ Akarorero: Muri Centre Ville kuri Bata.`);
             await msg.reply(`*Mwipfuza kuja hehe?*
 
 Akarorero: Muri Centre Ville kuri Bata.`);
-            return;
-          }
-          request.details.destination = msg.body;
-          request.state = UserState.AWAITING_PASSENGERS;
-          await msg.reply(`*Mushaka kugenda muri bangahe?*
+            break;
+          } else {
+            request.details.destination = msg.body;
+            request.state = UserState.AWAITING_PASSENGERS;
+            await msg.reply(`*Mushaka kugenda muri bangahe?*
 
 Andika igiharuro kiri *hagati ya 1 na 6*.`);
-          break;
+            break;
+          }
 
         case UserState.AWAITING_PASSENGERS:
           const passengers = msg.body.trim();
@@ -293,24 +296,25 @@ Andika igiharuro kiri *hagati ya 1 na 6*.`);
             await msg.reply(`*Mushaka kugenda muri bangahe?*
 
 Andika igiharuro kiri *hagati ya 1 na 6*.`);
-            return;
-          }
-          request.details.passengers = Number(msg.body) as
-            | 1
-            | 2
-            | 3
-            | 4
-            | 5
-            | 6;
-          request.state = UserState.AWAITING_CONFIRMATION;
-          await msg.reply(`*Ivyerekeye urugendo rwanyu:*
+            break;
+          } else {
+            request.details.passengers = Number(msg.body) as
+              | 1
+              | 2
+              | 3
+              | 4
+              | 5
+              | 6;
+            request.state = UserState.AWAITING_CONFIRMATION;
+            await msg.reply(`*Ivyerekeye urugendo rwanyu:*
 
 - Muri aha: "${request.details.pickup}".
 - Mugiye aha: "${request.details.destination}".
 - Igitigiri c'abantu: ${request.details.passengers}.
 
 Andika "*Ego*" kugira mwemeze runo rugendo, canke mwandike "*Oya*" kugira muruhebe.`);
-          break;
+            break;
+          }
 
         case UserState.AWAITING_CONFIRMATION:
           if (msg.body.toLowerCase() === "ego") {
@@ -375,6 +379,7 @@ Akarorero: Ku Mutanga kuri kaminuza y'Uburundi.`);
 
 Andika "*Ego*" kugira mwemeze runo rugendo, canke mwandike "*Oya*" kugira muruhebe.`);
           }
+
           break;
       }
       return;
