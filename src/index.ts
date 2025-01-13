@@ -229,9 +229,8 @@ class RideSharingBot {
 
       if (!this.rideRequests.has(userNumber)) {
         this.rideRequests.set(userNumber, new Map());
-      } else {
-        this.rideRequests.get(userNumber)!.set(requestId, newRequest);
       }
+      this.rideRequests.get(userNumber)!.set(requestId, newRequest);
 
       await msg.reply(
         `*Karibu ku rubuga Tujane*
