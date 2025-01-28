@@ -1,12 +1,5 @@
 import qrcode from "qrcode-terminal";
-import {
-  Client,
-  Message,
-  Chat,
-  MessageMedia,
-  RemoteAuth,
-} from "whatsapp-web.js";
-import { v4 as uuidv4 } from "uuid";
+import { Client, Message, Chat, RemoteAuth } from "whatsapp-web.js";
 import express from "express";
 import axios from "axios";
 import { SupabaseStore } from "./session/supabaseSessionStore";
@@ -122,13 +115,13 @@ class RideSharingBot {
         console.log("Session has been saved to remote DB");
       });
 
-      this.client.on("message", async (msg: Message) => {
+      this.client.on("message_create", async (msg: Message) => {
         const chat: Chat = await msg.getChat();
         if (chat.id._serialized === this.DRIVERS_GROUP_ID) {
           await driverHandler.handleDriverResponse(msg, this.client);
           return;
         }
-        if (!chat.isGroup) {
+        if (msg.body !== "") {
           await rideHandler.handleUserMessage(
             msg,
             this.rideRequests,
