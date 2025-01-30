@@ -115,13 +115,12 @@ class RideSharingBot {
         console.log("Session has been saved to remote DB");
       });
 
-      this.client.on("message_create", async (msg: Message) => {
+      this.client.on("message", async (msg: Message) => {
         const chat: Chat = await msg.getChat();
         if (chat.id._serialized === this.DRIVERS_GROUP_ID) {
           await driverHandler.handleDriverResponse(msg, this.client);
           return;
-        }
-        if (msg.body !== "") {
+        } else {
           await rideHandler.handleUserMessage(
             msg,
             this.rideRequests,
