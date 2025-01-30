@@ -120,7 +120,8 @@ class RideSharingBot {
         if (chat.id._serialized === this.DRIVERS_GROUP_ID) {
           await driverHandler.handleDriverResponse(msg, this.client);
           return;
-        } else {
+        }
+        if (msg.body.length > 0) {
           await rideHandler.handleUserMessage(
             msg,
             this.rideRequests,
